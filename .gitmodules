@@ -1,0 +1,3 @@
+[submodule "public/js/md5-wasm"]
+	path = public/js/md5-wasm
+	url = https://github.com/PKUzjw/md5-wasm.git
