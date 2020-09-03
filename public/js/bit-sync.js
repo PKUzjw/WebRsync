@@ -27,6 +27,12 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+var md5WASM;
+if(typeof(window) == "undefined"){
+    md5WASM = require("./md5-wasm/md5-wasm")
+}else{
+    md5WASM = window.md5WASM
+}
 
 var md5;
 if(!md5){
@@ -34,14 +40,36 @@ if(!md5){
 }
 var BSync = new function()
 {
-
     /******* Privates *********/
     /**
      * Native js md5 implementation. Written by by Luigi Galli - LG@4e71.org - http://faultylabs.com
      * Modified by Clay Gulick - clay@ratiosoftware.com - http://ratiosoftware.com
      */
+    // var md5 = function (data) {
+    //     var time_0 = performance.now()
+    //     var result
+    //     md5WASM(data)
+    //         .then(hash => result = hash)
+    //         .catch(err => console.log(err))
+    //     var time_1 = performance.now()
+    //     console.log('wasm-md5 time: ',  time_1-time_0)
+    //     console.log('wasm md5 result: ', result)
+    //     return result
+    //     }
     var md5 = function(data) {
-
+        // var time_0 = performance.now()
+        // var result
+        // md5WASM(data)
+        //     .then(hash => result = hash)
+        //     .catch(err => console.log(err))
+        // var time_1 = performance.now()
+        // console.log('wasm-md5 time: ',  time_1-time_0)
+        // if(!!result){
+        //     console.log('wasm md5 result: ', result)
+        //     return [result[0], result[1], result[2], result[3]]
+        // }
+        var time_1 = performance.now()
+        console.log('@@@@@@@@@@@@@@')
         // convert number to (unsigned) 32 bit hex, zero filled string
         function to_zerofilled_hex(n) {
             var t1 = (n >>> 0).toString(16)
@@ -192,9 +220,9 @@ var BSync = new function()
         }
 
 
-        return do_digest()
+        return do_digest(databytes)
 
-        function do_digest() {
+        function do_digest(databytes) {
 
             // function update partial state for each run
             function updateRun(nf, sin32, dw32, b32) {
@@ -326,6 +354,13 @@ var BSync = new function()
             }
             // Done! Convert buffers to 128 bit (LE)
             //return int128le_to_hex(h3, h2, h1, h0).toUpperCase()
+            console.log('result: ', result)
+            console.log('h0: ', h0)
+            console.log('h1: ', h1)
+            console.log('h2: ', h2)
+            console.log('h3: ', h3)
+            var time_2 = performance.now()
+            console.log('md5 time: ',  time_2-time_1)
             return [h0,h1,h2,h3];
         }
     }
@@ -439,6 +474,7 @@ var BSync = new function()
      */
     function createChecksumDocument(blockSize, data)
     {
+        console.log('***************')
         var startTime = performance.now();
         var numBlocks = Math.ceil(data.byteLength / blockSize);
         var i=0;
@@ -474,6 +510,7 @@ var BSync = new function()
 
             // var md5sum = md5(new Uint8Array(data, start, chunkLength));
             md5sum = md5(dataView.slice(start,start+chunkLength));
+            // console.log('create checksumdoc md5: ', md5sum)
             for(var j=0; j < 4; j++) bufferView[offset++] = md5sum[j];
 
         }
@@ -570,8 +607,12 @@ var BSync = new function()
                 if((row[i][1] & 0xffffffff) != adlerInfo.checksum) continue;
                 //do strong comparison
                 md5sum1 = md5(block);
+                // console.log('create patch md5: ', md5sum1)
                 md5sum1 = new Uint32Array([md5sum1[0],md5sum1[1],md5sum1[2],md5sum1[3]]); //convert to unsigned 32
                 md5sum2 = row[i][2];
+                console.log('md5sum1: ', md5sum1)
+                console.log('md5sum2: ', md5sum2)
+
                 if(
                     md5sum1[0] == md5sum2[0] &&
                     md5sum1[1] == md5sum2[1] &&
