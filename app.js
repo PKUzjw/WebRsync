@@ -97,16 +97,18 @@ io.on('connection', function(socket)
         fs.stat(filePath, function (err,stat) {
 
             if (err == null) {
-                getFileData(filePath,function(data){
+                getFileData(filePath,async function(data){
                     data.byteLength = data.length;
                     console.log('start get checksumdoc 1...',data.length);
-                    checksumdoc = BSync.createChecksumDocument(req.blocksize,data);
+                    checksumdoc = await BSync.createChecksumDocument(req.blocksize,data);
+                    console.log('server checksum doc: ', checksumdoc)
                     console.log('<< checksumdoc');
                     socket.emit('checksumdoc',{filename:req.filename,checksumdoc:checksumdoc});
                 })
             } else {
                 console.log('start get checksumdoc 2...');
                 checksumdoc = BSync.createChecksumDocument(req.blocksize,new ArrayBuffer(0));
+                console.log('server checksum doc: ', checksumdoc)
                 console.log('<< checksumdoc');
                 socket.emit('checksumdoc',{filename:req.filename,checksumdoc:checksumdoc});
             }

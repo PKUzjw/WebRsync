@@ -13,7 +13,8 @@ if (window.File && window.FileReader && window.FileList && window.Blob) {
 
 var lock = true;
 var current_file = null;
-var block_size =  8*1024;
+// var block_size =  8*1024;
+var block_size =  2*1024*1024;
 var chunkSize  =  100 * 1024 * 1024;
 var timetamp;
 var checksum_timetamp;
@@ -38,11 +39,13 @@ socket.on('checksumdoc',function(req){
     checksumdoc = req.checksumdoc;
     traffic += checksumdoc.byteLength;
     var patchnum = Math.ceil(current_file.size / chunkSize)
-    parseFile(current_file,function(type,data,start,stop){
+    parseFile(current_file,async function(type,data,start,stop){
         console.log('>> getting patchdoc...');
         var startTime = performance.now();
-        patchdoc = BSync.createPatchDocument(checksumdoc,data);
+        console.log('client receive checksum doc: ', checksumdoc)
+        patchdoc = await BSync.createPatchDocument(checksumdoc,data);
         var test1 = performance.now();
+        console.log('client patch doc: ', patchdoc);
         console.log("client patch doc time: " + (test1 - startTime));
         console.log('<< patchdoc');
         traffic += patchdoc.byteLength;
