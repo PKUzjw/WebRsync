@@ -3,3 +3,7 @@ node_modules/
 upload/
 package-lock.json
 .Ds_Store
+dataset/append
+dataset/insert
+dataset/cut
+dataset/*.txt

@@ -28,18 +28,17 @@
  * THE SOFTWARE.
  */
 var md5WASM;
-if(typeof(window) == "undefined"){
+if (typeof (window) == "undefined") {
     md5WASM = require("./md5-wasm/md5-wasm")
-}else{
+} else {
     md5WASM = window.md5WASM
 }
 
 var md5;
-if(!md5){
+if (!md5) {
     var performance = Date;
 }
-var BSync = new function()
-{
+var BSync = new function () {
     /******* Privates *********/
     /**
      * Native js md5 implementation. Written by by Luigi Galli - LG@4e71.org - http://faultylabs.com
@@ -56,14 +55,14 @@ var BSync = new function()
     //     console.log('wasm md5 result: ', result)
     //     return result
     //     }
-    var md5 =  async function(data) {
-    // function md5(data) {
+    var md5 = async function (data) {
+        // function md5(data) {
         var time_0 = performance.now()
-        var result=[]
+        var result = []
         return await md5WASM(data)
             // .then(hash => console.log("return md5:", hash))
             // .then(hash => {console.log(hash);return hash})
-            .then(hash => {return hash})
+            .then(hash => { return hash })
             .catch(err => console.log(err))
         // var time_1 = performance.now()
         // console.log('wasm-md5 time: ',  time_1-time_0)
@@ -372,10 +371,9 @@ var BSync = new function()
      * Create a fast 16 bit hash of a 32bit number. Just using a simple mod 2^16 for this for now.
      * TODO: Evaluate the distribution of adler32 to see if simple modulus is appropriate as a hashing function, or wheter 2^16 should be replaced with a prime
      */
-    function hash16(i)
-    {
-        var p =  1867;
-        return ((i>>16)& 0xffff ^ ((i&0xffff) * p)) & 0xffff;
+    function hash16(i) {
+        var p = 1867;
+        return ((i >> 16) & 0xffff ^ ((i & 0xffff) * p)) & 0xffff;
     }
 
     /**
@@ -389,18 +387,16 @@ var BSync = new function()
      *
      * TODO: according to wikipedia, the zlib compression library has a much more efficient implementation of adler. To speed this up, it might be worth investigating whether that can be used here.
      */
-    function adler32_1(offset, end, data)
-    {
-        var i=0;
-        var a=0;
-        var b=0;
+    function adler32_1(offset, end, data) {
+        var i = 0;
+        var a = 0;
+        var b = 0;
 
         //adjust the end to make sure we don't exceed the extents of the data.
-        if(end >= data.length)
+        if (end >= data.length)
             end = data.length - 1;
 
-        for(i=offset; i <= end; i++)
-        {
+        for (i = offset; i <= end; i++) {
             a += data[i];
             b += a;
         }
@@ -408,28 +404,26 @@ var BSync = new function()
         a %= 65536; //65536 = 2^16, used for M in the tridgell equation
         b %= 65536;
 
-        return {a: a, b: b, checksum: ((b << 16) | a) >>> 0 };
+        return { a: a, b: b, checksum: ((b << 16) | a) >>> 0 };
 
     }
     var MOD_ADLER = 65521;
-    function adler32(offset, end, data)
-    {
+    function adler32(offset, end, data) {
 
-        var a = 1, b= 0;
+        var a = 1, b = 0;
 
         //adjust the end to make sure we don't exceed the extents of the data.
-        if(end >= data.length)
+        if (end >= data.length)
             end = data.length - 1;
 
-        for(i=offset; i <= end; i++)
-        {
+        for (i = offset; i <= end; i++) {
             a += data[i];
             b += a;
             a %= MOD_ADLER;
             b %= MOD_ADLER;
         }
 
-        return {a: a&0xffffffff, b: b&0xffffffff, checksum: ((b << 16) | a) & 0xffffffff };
+        return { a: a & 0xffffffff, b: b & 0xffffffff, checksum: ((b << 16) | a) & 0xffffffff };
 
     }
     /**
@@ -437,20 +431,18 @@ var BSync = new function()
      * Returns an object suitable for use in additional calls to rollingChecksum, same as the adler32 function. This needs to be called with an offset of at least 1!
      * It is the responsibility of the called to make sure we don't exceed the bounds of the data, i.e. end MUST be less than data.length
      */
-    function rollingChecksum1(adlerInfo, offset, end, data)
-    {
+    function rollingChecksum1(adlerInfo, offset, end, data) {
         var temp = data[offset - 1]; //this is the first byte used in the previous iteration
         var a = (adlerInfo.a - temp + data[end]) % 65536;
         var b = (adlerInfo.b - ((end - offset + 1) * temp) + a) % 65536;
-        return {a: a, b: b, checksum: (b << 16) | a };
+        return { a: a, b: b, checksum: (b << 16) | a };
     }
 
-    function rollingChecksum(adlerInfo, offset, end, data)
-    {
+    function rollingChecksum(adlerInfo, offset, end, data) {
         var temp = data[offset - 1]; //this is the first byte used in the previous iteration
-        var a = ((adlerInfo.a - temp + data[end]) % MOD_ADLER + MOD_ADLER)%MOD_ADLER;
-        var b = ((adlerInfo.b - ((end - offset + 1) * temp) + a - 1) % MOD_ADLER + MOD_ADLER)%MOD_ADLER;
-        return {a: a&0xffffffff, b: b&0xffffffff, checksum: ((b << 16) | a)&0xffffffff };
+        var a = ((adlerInfo.a - temp + data[end]) % MOD_ADLER + MOD_ADLER) % MOD_ADLER;
+        var b = ((adlerInfo.b - ((end - offset + 1) * temp) + a - 1) % MOD_ADLER + MOD_ADLER) % MOD_ADLER;
+        return { a: a & 0xffffffff, b: b & 0xffffffff, checksum: ((b << 16) | a) & 0xffffffff };
     }
 
     /**
@@ -459,8 +451,7 @@ var BSync = new function()
      *
      * BTW: This assumes everything to be little endian.
      */
-    function readInt32(uint8View, offset)
-    {
+    function readInt32(uint8View, offset) {
         return (uint8View[offset] | uint8View[++offset] << 8 | uint8View[++offset] << 16 | uint8View[++offset] << 24) >>> 0;
     }
 
@@ -474,16 +465,15 @@ var BSync = new function()
      *   16 bytes, md5 checksum
      *
      */
-    async function createChecksumDocument(blockSize, data)
-    {
+    async function createChecksumDocument(blockSize, data) {
         var startTime = performance.now();
         var numBlocks = Math.ceil(data.byteLength / blockSize);
-        var i=0;
-        var docLength = ( numBlocks * //the number of blocks times
-        ( 4 +       //the 4 bytes for the adler32 plus
-        16) +     //the 16 bytes for the md5
-        4 +         //plus 4 bytes for block size
-        4);         //plus 4 bytes for the number of blocks
+        var i = 0;
+        var docLength = (numBlocks * //the number of blocks times
+            (4 +       //the 4 bytes for the adler32 plus
+                16) +     //the 16 bytes for the md5
+            4 +         //plus 4 bytes for block size
+            4);         //plus 4 bytes for the number of blocks
 
         var doc = new ArrayBuffer(docLength);
         var dataView = new Uint8Array(data);
@@ -495,8 +485,7 @@ var BSync = new function()
         bufferView[1] = numBlocks;
 
         //spin through the data and create checksums for each block
-        for(i=0; i < numBlocks; i++)
-        {
+        for (i = 0; i < numBlocks; i++) {
             var start = i * blockSize;
             var end = (i * blockSize) + blockSize;
 
@@ -506,21 +495,21 @@ var BSync = new function()
 
             //calculate the full md5 checksum
             var chunkLength = blockSize;
-            if((start + blockSize) > data.byteLength)
+            if ((start + blockSize) > data.byteLength)
                 chunkLength = data.byteLength - start;
 
             // var md5sum = md5(new Uint8Array(data, start, chunkLength));
-            console.log('******time1: ', new Date().toLocaleTimeString('cn',{hour12:false}))
-            md5sum = await md5(dataView.slice(start,start+chunkLength));
-            console.log('******time3: ', new Date().toLocaleTimeString('cn',{hour12:false}))
-            console.log('create checksumdoc md5: ', md5sum)
-            for(var j=0; j < 4; j++) bufferView[offset++] = md5sum[j];
+            // console.log('******time1: ', new Date().toLocaleTimeString('cn', { hour12: false }))
+            md5sum = await md5(dataView.slice(start, start + chunkLength));
+            // console.log('******time3: ', new Date().toLocaleTimeString('cn', { hour12: false }))
+            // console.log('create checksumdoc md5: ', md5sum)
+            for (var j = 0; j < 4; j++) bufferView[offset++] = md5sum[j];
 
         }
         var test1 = performance.now();
         console.log("checksum time: " + (test1 - startTime));
-        console.log('******time4: ', new Date().toLocaleTimeString('cn',{hour12:false}))
-        console.log('doc: ', doc)
+        // console.log('******time4: ', new Date().toLocaleTimeString('cn', { hour12: false }))
+        // console.log('doc: ', doc)
         return doc;
 
     }
@@ -535,10 +524,9 @@ var BSync = new function()
      *  ...
      * ]
      */
-    function parseChecksumDocument(checksumDocument)
-    {
+    function parseChecksumDocument(checksumDocument) {
         var ret = [];
-        var i=0;
+        var i = 0;
         var view = new Uint32Array(checksumDocument);
         var blockIndex = 1; //blockIndex is 1 based, not zero based
         var numBlocks = view[1];
@@ -546,24 +534,19 @@ var BSync = new function()
         var hash;
 
         //each chunk in the document is 20 bytes long. 32 bit view indexes 4 bytes, so increment by 5.
-        for(i = 2; i <= view.length - 5; i += 5)
-        {
+        for (i = 2; i <= view.length - 5; i += 5) {
             checksumInfo = [
                 blockIndex, //the index of the block
                 view[i], //the adler32sum
-                [view[i+1],view[i+2],view[i+3],view[i+4]] //the md5sum
+                [view[i + 1], view[i + 2], view[i + 3], view[i + 4]] //the md5sum
             ];
             hash = hash16(checksumInfo[1]);
-            if(!ret[hash]) ret[hash] = [];
+            if (!ret[hash]) ret[hash] = [];
             ret[hash].push(checksumInfo);
             blockIndex++;
         }
 
-        console.log(numBlocks)
-        console.log(blockIndex-1)
-
-        if(numBlocks != (blockIndex - 1))
-        {
+        if (numBlocks != (blockIndex - 1)) {
             throw "Error parsing checksum document. Document states the number of blocks is: " + numBlocks + " however, " + blockIndex - 1 + " blocks were discovered";
         }
         return ret;
@@ -756,13 +739,12 @@ var BSync = new function()
     //         resolve(patchDocument);
     //     })
     // }
-    async function createPatchDocument(checksumDocument, data)
-    {
+    async function createPatchDocument(checksumDocument, data) {
         var content_traffic = 0;
-        function appendBuffer( buffer1, buffer2 ) {
-            var tmp = new Uint8Array( buffer1.byteLength + buffer2.byteLength );
-            tmp.set( new Uint8Array( buffer1 ), 0 );
-            tmp.set( new Uint8Array( buffer2 ), buffer1.byteLength );
+        function appendBuffer(buffer1, buffer2) {
+            var tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+            tmp.set(new Uint8Array(buffer1), 0);
+            tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
             return tmp.buffer;
         }
 
@@ -771,28 +753,26 @@ var BSync = new function()
          * Then, look through all the entries in the hashtable row for an adler 32 match.
          * Finally, do a strong md5 comparison
          */
-        async function checkMatch(adlerInfo, hashTable, block)
-        {
+        async function checkMatch(adlerInfo, hashTable, block) {
             var hash = hash16(adlerInfo.checksum);
-            if(!(hashTable[hash])) return false;
+            if (!(hashTable[hash])) return false;
             var row = hashTable[hash];
-            var i=0;
-            var matchedIndex=0;
+            var i = 0;
+            var matchedIndex = 0;
 
-            for(i=0; i<row.length; i++)
-            {
+            for (i = 0; i < row.length; i++) {
                 //compare adler32sum
-                if((row[i][1] & 0xffffffff) != adlerInfo.checksum) continue;
+                if ((row[i][1] & 0xffffffff) != adlerInfo.checksum) continue;
                 //do strong comparison
                 md5sum1 = await md5(block);
-                console.log('create patch md5: ', md5sum1)
-                md5sum1 = new Uint32Array([md5sum1[0],md5sum1[1],md5sum1[2],md5sum1[3]]); //convert to unsigned 32
+                // console.log('create patch md5: ', md5sum1)
+                md5sum1 = new Uint32Array([md5sum1[0], md5sum1[1], md5sum1[2], md5sum1[3]]); //convert to unsigned 32
                 md5sum2 = row[i][2];
                 // md5sum2 = new Uint32Array([md5sum2[0], md5sum2[1], md5sum2[2], md5sum2[3]])
-                console.log('md5sum1: ', md5sum1)
-                console.log('md5sum2: ', md5sum2)
+                // console.log('md5sum1: ', md5sum1)
+                // console.log('md5sum2: ', md5sum2)
 
-                if(
+                if (
                     md5sum1[0] === md5sum2[0] &&
                     md5sum1[1] === md5sum2[1] &&
                     md5sum1[2] === md5sum2[2] &&
@@ -814,10 +794,10 @@ var BSync = new function()
         var patchDocument = new ArrayBuffer(12);
         var patch;
         var patches = new ArrayBuffer(0);
-        var i=0;
-        console.log(checksumDocument)
+        var i = 0;
+        // console.log(checksumDocument)
         var hashTable = parseChecksumDocument(checksumDocument);
-        console.log('client parse checksum doc hash table: ', hashTable)
+        // console.log('client parse checksum doc hash table: ', hashTable)
         var endOffset = data.byteLength - blockSize;
         var adlerInfo = null;
         var lastMatchIndex = 0;
@@ -830,26 +810,39 @@ var BSync = new function()
         var matchCount = 0;
 
 
-        for(;;)
-        {
+        let cnt1 = 0, cnt2 = 0
+        let s, e, total = 0
+        for (; ;) {
             var chunkSize = 0;
             //determine the size of the next data chuck to evaluate. Default to blockSize, but clamp to end of data
-            if((i + blockSize) > data.byteLength)
-            {
-                chunkSize = data.byteLength - i;
-                adlerInfo=null; //need to reset this because the rolling checksum doesn't work correctly on a final non-aligned block
+            if ((i + blockSize) > data.byteLength) {
+                // chunkSize = data.byteLength - i;
+                // adlerInfo = null; //need to reset this because the rolling checksum doesn't work correctly on a final non-aligned block
+                for (; i < data.byteLength; i++) {
+                    currentPatchUint8[currentPatchSize] = dataUint8[i];
+                    currentPatchSize++;
+                    content_traffic++;
+                    if (currentPatchSize >= currentPatch.byteLength) {
+                        //allocate another 1000 bytes
+                        currentPatch = appendBuffer(currentPatch, new ArrayBuffer(1000));
+                        currentPatchUint8 = new Uint8Array(currentPatch);
+                    }
+                }
+                break;
             }
             else
                 chunkSize = blockSize;
 
-            if(adlerInfo)
+            if (adlerInfo) {
+                cnt1++
                 adlerInfo = rollingChecksum(adlerInfo, i, i + chunkSize - 1, dataUint8);
-            else
+            } else {
+                cnt2++
                 adlerInfo = adler32(i, i + chunkSize - 1, dataUint8);
+            }
 
-            var matchedBlock = await checkMatch(adlerInfo, hashTable,dataUint8.slice(i,i+chunkSize));
-            if(matchedBlock)
-            {
+            var matchedBlock = await checkMatch(adlerInfo, hashTable, dataUint8.slice(i, i + chunkSize));
+            if (matchedBlock) {
                 //if we have a match, do the following:
                 //1) add the matched block index to our tracking buffer
                 //2) check to see if there's a current patch. If so, add it to the patch document.
@@ -857,19 +850,17 @@ var BSync = new function()
                 matchedBlocksUint32[matchCount] = matchedBlock;
                 matchCount++;
                 //check to see if we need more memory for the matched blocks
-                if(matchCount >= matchedBlocksUint32.length)
-                {
+                if (matchCount >= matchedBlocksUint32.length) {
                     matchedBlocks = appendBuffer(matchedBlocks, new ArrayBuffer(1000));
                     matchedBlocksUint32 = new Uint32Array(matchedBlocks);
                 }
-                if(currentPatchSize > 0)
-                {
+                if (currentPatchSize > 0) {
                     //create the patch and append it to the patches buffer
                     patch = new ArrayBuffer(4 + 4); //4 for last match index, 4 for patch size
-                    var patchUint32 = new Uint32Array(patch,0,2);
+                    var patchUint32 = new Uint32Array(patch, 0, 2);
                     patchUint32[0] = lastMatchIndex;
                     patchUint32[1] = currentPatchSize;
-                    patch = appendBuffer(patch,currentPatch.slice(0,currentPatchSize));
+                    patch = appendBuffer(patch, currentPatch.slice(0, currentPatchSize));
                     patches = appendBuffer(patches, patch);
                     currentPatch = new ArrayBuffer(1000);
                     currentPatchUint8 = new Uint8Array(currentPatch);
@@ -877,49 +868,48 @@ var BSync = new function()
                     numPatches++;
                 }
                 lastMatchIndex = matchedBlock;
-                i+=blockSize;
-                if(i >= dataUint8.length -1 ) break;
-                adlerInfo=null;
+                i += blockSize
+                if (i >= dataUint8.length - 1) break;
+                adlerInfo = null;
                 continue;
             }
-            else
-            {
+            else {
                 //while we don't have a block match, append bytes to the current patch
                 currentPatchUint8[currentPatchSize] = dataUint8[i];
                 currentPatchSize++;
                 content_traffic++;
-                if(currentPatchSize >= currentPatch.byteLength)
-                {
+                if (currentPatchSize >= currentPatch.byteLength) {
                     //allocate another 1000 bytes
                     currentPatch = appendBuffer(currentPatch, new ArrayBuffer(1000));
                     currentPatchUint8 = new Uint8Array(currentPatch);
                 }
             }
-            if((i) >= dataUint8.length -1) break;
+            if ((i) >= dataUint8.length - 1) break;
             i++;
         } //end for each byte in the data
-        if(currentPatchSize > 0)
-        {
+        console.log("CNT1: ", cnt1)
+        console.log("CNT2: ", cnt2)
+        if (currentPatchSize > 0) {
             //create the patch and append it to the patches buffer
             patch = new ArrayBuffer(4 + 4); //4 for last match index, 4 for patch size
-            var patchUint32 = new Uint32Array(patch,0,2);
+            var patchUint32 = new Uint32Array(patch, 0, 2);
             patchUint32[0] = lastMatchIndex;
             patchUint32[1] = currentPatchSize;
-            patch = appendBuffer(patch,currentPatch.slice(0,currentPatchSize));
+            patch = appendBuffer(patch, currentPatch.slice(0, currentPatchSize));
             patches = appendBuffer(patches, patch);
             numPatches++;
         }
-        console.log('content traffic is',content_traffic);
+        console.log('content traffic is', content_traffic);
 
         var patchDocumentView32 = new Uint32Array(patchDocument);
         patchDocumentView32[0] = blockSize;
         patchDocumentView32[1] = numPatches;
         patchDocumentView32[2] = matchCount;
-        console.log('match count',matchCount);
-        patchDocument = appendBuffer(patchDocument, matchedBlocks.slice(0,matchCount * 4));
+        console.log('match count', matchCount);
+        patchDocument = appendBuffer(patchDocument, matchedBlocks.slice(0, matchCount * 4));
         patchDocument = appendBuffer(patchDocument, patches);
 
-        var patchDocumentView32 = new Uint32Array(patchDocument,0,matchCount + 3);
+        var patchDocumentView32 = new Uint32Array(patchDocument, 0, matchCount + 3);
         var patchDocumentView8 = new Uint8Array(patchDocument);
 
         return patchDocument;
@@ -930,32 +920,31 @@ var BSync = new function()
      * Due to the inability to modify the size of ArrayBuffers once they have been allocated, this function
      * will return a new ArrayBuffer with the update file data. Note that this will consume a good bit of extra memory.
      */
-    function applyPatch(patchDocument, data)
-    {
-        function appendBlock( buffer, blockUint8) {
-            var tmp = new Uint8Array( buffer.byteLength + blockUint8.length);
-            tmp.set( new Uint8Array( buffer ), 0 );
-            tmp.set( blockUint8, buffer.byteLength );
+    function applyPatch(patchDocument, data) {
+        function appendBlock(buffer, blockUint8) {
+            var tmp = new Uint8Array(buffer.byteLength + blockUint8.length);
+            tmp.set(new Uint8Array(buffer), 0);
+            tmp.set(blockUint8, buffer.byteLength);
             return tmp.buffer;
         }
 
-        var patchDocumentView32 = new Uint32Array(patchDocument,0,3);
+        var patchDocumentView32 = new Uint32Array(patchDocument, 0, 3);
         var blockSize = patchDocumentView32[0];
         var patchCount = patchDocumentView32[1];
         var matchCount = patchDocumentView32[2];
-        var matchedBlockView32 = new Uint32Array(patchDocument,12,matchCount);
-        var i=0;
-        var j=0;
+        var matchedBlockView32 = new Uint32Array(patchDocument, 12, matchCount);
+        var i = 0;
+        var j = 0;
 
         //first, let's deal with the simple case where we fully match. This is just an optimization for the unchanged file case.
         //to determine this, the number of matches must exactly equal ceil of data / blockSize, and num patches must be zero
         //additionally, the matched block indexes must start with 1 and be in order. This is to deal with the extreme edge case of a block being relocated
         //on an exact block boundary
-        if(patchCount == 0)
-            if(Math.ceil(data.byteLength / blockSize) == matchCount)
-                for(i = 1; i <= matchCount; i++)
-                    if(matchedBlockView32[i-1] != i) { break; }
-        if((i - 1) == matchCount) return data; //exact match
+        if (patchCount == 0)
+            if (Math.ceil(data.byteLength / blockSize) == matchCount)
+                for (i = 1; i <= matchCount; i++)
+                    if (matchedBlockView32[i - 1] != i) { break; }
+        if ((i - 1) == matchCount) return data; //exact match
 
         //there was a modification. We need to construct the new document.
         //the way this works is as follows:
@@ -964,43 +953,40 @@ var BSync = new function()
         //3) append the patch at that point
         //4) after all patches have been applied, continue to loop through the matchedBlocks appending each one in order
         var offset = 12 + (matchCount * 4); //offset to the start of the patches
-        var lastMatchingBlockIndex=0;
-        var patchSize=0;
+        var lastMatchingBlockIndex = 0;
+        var patchSize = 0;
         var patchView8;
-        var matchIndex=0; //the index into the matching blocks array
-        var blockIndex=0; //the index of the block in the matching blocks array
+        var matchIndex = 0; //the index into the matching blocks array
+        var blockIndex = 0; //the index of the block in the matching blocks array
         var ret = new ArrayBuffer(0);
         var patchDocumentView8 = new Uint8Array(patchDocument);
-        var chunkSize=0;
+        var chunkSize = 0;
         var dataView = new Uint8Array(data);
-        for(i=0; i< patchCount; i++)
-        {
-            lastMatchingBlockIndex = readInt32(patchDocumentView8,offset);
-            patchSize = readInt32(patchDocumentView8,offset + 4);
-            patchView8 = patchDocumentView8.slice(offset+8,offset+8+patchSize)//new Uint8Array(patchDocument, offset + 8, patchSize);
+        for (i = 0; i < patchCount; i++) {
+            lastMatchingBlockIndex = readInt32(patchDocumentView8, offset);
+            patchSize = readInt32(patchDocumentView8, offset + 4);
+            patchView8 = patchDocumentView8.slice(offset + 8, offset + 8 + patchSize)//new Uint8Array(patchDocument, offset + 8, patchSize);
             offset = offset + 8 + patchSize;
 
-            for(;matchIndex < matchedBlockView32.length; matchIndex++)
-            {
+            for (; matchIndex < matchedBlockView32.length; matchIndex++) {
                 blockIndex = matchedBlockView32[matchIndex];
-                if(blockIndex > lastMatchingBlockIndex) break;
-                if((blockIndex * blockSize) > data.byteLength)
+                if (blockIndex > lastMatchingBlockIndex) break;
+                if ((blockIndex * blockSize) > data.byteLength)
                     chunkSize = data.byteLength % blockSize;
                 else chunkSize = blockSize;
-                ret = appendBlock(ret, dataView.slice((blockIndex-1) * blockSize,(blockIndex-1) * blockSize+chunkSize));
+                ret = appendBlock(ret, dataView.slice((blockIndex - 1) * blockSize, (blockIndex - 1) * blockSize + chunkSize));
             }
 
             ret = appendBlock(ret, patchView8);
         }
 
         //we're done with all the patches, add the remaining blocks
-        for(;matchIndex < matchedBlockView32.length; matchIndex++)
-        {
+        for (; matchIndex < matchedBlockView32.length; matchIndex++) {
             blockIndex = matchedBlockView32[matchIndex];
-            if((blockIndex * blockSize) > data.byteLength)
+            if ((blockIndex * blockSize) > data.byteLength)
                 chunkSize = data.byteLength % blockSize;
             else chunkSize = blockSize;
-            ret = appendBlock(ret, dataView.slice((blockIndex-1) * blockSize,(blockIndex-1) * blockSize+chunkSize));
+            ret = appendBlock(ret, dataView.slice((blockIndex - 1) * blockSize, (blockIndex - 1) * blockSize + chunkSize));
         }
 
         return ret;
@@ -1010,11 +996,11 @@ var BSync = new function()
     this.createChecksumDocument = createChecksumDocument;
     this.createPatchDocument = createPatchDocument;
     this.applyPatch = applyPatch;
-    this.util = {md5: md5, adler32: adler32, rollingChecksum: rollingChecksum, readInt32: readInt32}; //mostly exposing these for the purposes of unit tests, but hey, if they are useful to someone, have at it!
+    this.util = { md5: md5, adler32: adler32, rollingChecksum: rollingChecksum, readInt32: readInt32 }; //mostly exposing these for the purposes of unit tests, but hey, if they are useful to someone, have at it!
 };
 
 
-if(((typeof require) != "undefined") &&
+if (((typeof require) != "undefined") &&
     ((typeof module) != "undefined") &&
     ((typeof module.exports) != "undefined"))
     module.exports = BSync;
