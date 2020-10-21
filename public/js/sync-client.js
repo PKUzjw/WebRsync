@@ -15,7 +15,7 @@ var lock = true;
 var current_file = null;
 // var block_size =  8*1024;
 var block_size =  1024 * 1024
-var chunkSize  =  100 * 1024 * 1024;
+var chunkSize  =  1024 * 1024 * 1024;
 var timetamp;
 var checksum_timetamp;
 
