@@ -44,33 +44,11 @@ var BSync = new function () {
      * Native js md5 implementation. Written by by Luigi Galli - LG@4e71.org - http://faultylabs.com
      * Modified by Clay Gulick - clay@ratiosoftware.com - http://ratiosoftware.com
      */
-    // var md5 = function (data) {
-    //     var time_0 = performance.now()
-    //     var result
-    //     md5WASM(data)
-    //         .then(hash => result = hash)
-    //         .catch(err => console.log(err))
-    //     var time_1 = performance.now()
-    //     console.log('wasm-md5 time: ',  time_1-time_0)
-    //     console.log('wasm md5 result: ', result)
-    //     return result
-    //     }
     var md5 = async function (data) {
         // function md5(data) {
-        var time_0 = performance.now()
-        var result = []
         return await md5WASM(data)
-            // .then(hash => console.log("return md5:", hash))
-            // .then(hash => {console.log(hash);return hash})
             .then(hash => { return hash })
             .catch(err => console.log(err))
-        // var time_1 = performance.now()
-        // console.log('wasm-md5 time: ',  time_1-time_0)
-        // if(result){
-        //     console.log('wasm md5 result: ', result)
-        //     return [result[0], result[1], result[2], result[3]]
-        // }
-        // console.log('@@@@@@@@@@@@@@')
         //     // convert number to (unsigned) 32 bit hex, zero filled string
         //     function to_zerofilled_hex(n) {
         //         var t1 = (n >>> 0).toString(16)
@@ -355,13 +333,6 @@ var BSync = new function () {
         //         }
         //         // Done! Convert buffers to 128 bit (LE)
         //         //return int128le_to_hex(h3, h2, h1, h0).toUpperCase()
-        //         console.log('result: ', result)
-        //         console.log('h0: ', h0)
-        //         console.log('h1: ', h1)
-        //         console.log('h2: ', h2)
-        //         console.log('h3: ', h3)
-        //         var time_2 = performance.now()
-        //         console.log('md5 time: ',  time_2-time_1)
         //         return [h0,h1,h2,h3];
         // }
     }
@@ -498,18 +469,12 @@ var BSync = new function () {
             if ((start + blockSize) > data.byteLength)
                 chunkLength = data.byteLength - start;
 
-            // var md5sum = md5(new Uint8Array(data, start, chunkLength));
-            // console.log('******time1: ', new Date().toLocaleTimeString('cn', { hour12: false }))
             md5sum = await md5(dataView.slice(start, start + chunkLength));
-            // console.log('******time3: ', new Date().toLocaleTimeString('cn', { hour12: false }))
-            // console.log('create checksumdoc md5: ', md5sum)
             for (var j = 0; j < 4; j++) bufferView[offset++] = md5sum[j];
 
         }
         var test1 = performance.now();
         console.log("checksum time: " + (test1 - startTime));
-        // console.log('******time4: ', new Date().toLocaleTimeString('cn', { hour12: false }))
-        // console.log('doc: ', doc)
         return doc;
 
     }
@@ -568,177 +533,6 @@ var BSync = new function () {
      *   4 bytes - patch size
      *   n bytes - new data
      */
-    // function createPatchDocument(checksumDocument, data) {
-    //     return new Promise((resolve, reject)=>{
-    //         var content_traffic = 0;
-    //         function appendBuffer( buffer1, buffer2 ) {
-    //             var tmp = new Uint8Array( buffer1.byteLength + buffer2.byteLength );
-    //             tmp.set( new Uint8Array( buffer1 ), 0 );
-    //             tmp.set( new Uint8Array( buffer2 ), buffer1.byteLength );
-    //             return tmp.buffer;
-    //         }
-    //
-    //         /**
-    //          * First, check to see if there's a match on the 16 bit hash
-    //          * Then, look through all the entries in the hashtable row for an adler 32 match.
-    //          * Finally, do a strong md5 comparison
-    //          */
-    //         async function checkMatch(adlerInfo, hashTable, block)
-    //         {
-    //             var hash = hash16(adlerInfo.checksum);
-    //             if(!(hashTable[hash])) return false;
-    //             var row = hashTable[hash];
-    //             var i=0;
-    //             var matchedIndex=0;
-    //
-    //             for(i=0; i<row.length; i++)
-    //             {
-    //                 //compare adler32sum
-    //                 if((row[i][1] & 0xffffffff) != adlerInfo.checksum) continue;
-    //                 //do strong comparison
-    //                 md5sum1 = await md5(block);
-    //                 console.log('create patch md5: ', md5sum1)
-    //                 md5sum1 = new Uint32Array([md5sum1[0],md5sum1[1],md5sum1[2],md5sum1[3]]); //convert to unsigned 32
-    //                 md5sum2 = row[i][2];
-    //                 // md5sum2 = new Uint32Array([md5sum2[0], md5sum2[1], md5sum2[2], md5sum2[3]])
-    //                 console.log('md5sum1: ', md5sum1)
-    //                 console.log('md5sum2: ', md5sum2)
-    //
-    //                 if(
-    //                     md5sum1[0] === md5sum2[0] &&
-    //                     md5sum1[1] === md5sum2[1] &&
-    //                     md5sum1[2] === md5sum2[2] &&
-    //                     md5sum1[3] === md5sum2[3]
-    //                 )
-    //                     return row[i][0]; //match found, return the matched block index
-    //
-    //             }
-    //
-    //             return false;
-    //
-    //         }
-    //
-    //         var checksumDocumentView = new Uint32Array(checksumDocument);
-    //         var blockSize = checksumDocumentView[0];
-    //         var numBlocks = checksumDocumentView[1];
-    //         var numPatches = 0;
-    //
-    //         var patchDocument = new ArrayBuffer(12);
-    //         var patch;
-    //         var patches = new ArrayBuffer(0);
-    //         var i=0;
-    //         console.log('client receive checksumdoc: ', checksumDocument)
-    //         var hashTable = parseChecksumDocument(checksumDocument);
-    //         console.log('client parse checksum doc hash table: ', hashTable)
-    //         var endOffset = data.byteLength - blockSize;
-    //         var adlerInfo = null;
-    //         var lastMatchIndex = 0;
-    //         var currentPatch = new ArrayBuffer(1000);
-    //         var currentPatchUint8 = new Uint8Array(currentPatch);
-    //         var currentPatchSize = 0;
-    //         var dataUint8 = new Uint8Array(data);
-    //         var matchedBlocks = new ArrayBuffer(1000);
-    //         var matchedBlocksUint32 = new Uint32Array(matchedBlocks);
-    //         var matchCount = 0;
-    //
-    //
-    //         for(;;)
-    //         {
-    //             var chunkSize = 0;
-    //             //determine the size of the next data chuck to evaluate. Default to blockSize, but clamp to end of data
-    //             if((i + blockSize) > data.byteLength)
-    //             {
-    //                 chunkSize = data.byteLength - i;
-    //                 adlerInfo=null; //need to reset this because the rolling checksum doesn't work correctly on a final non-aligned block
-    //             }
-    //             else
-    //                 chunkSize = blockSize;
-    //
-    //             if(adlerInfo)
-    //                 adlerInfo = rollingChecksum(adlerInfo, i, i + chunkSize - 1, dataUint8);
-    //             else
-    //                 adlerInfo = adler32(i, i + chunkSize - 1, dataUint8);
-    //
-    //             var matchedBlock = await checkMatch(adlerInfo, hashTable,dataUint8.slice(i,i+chunkSize)).then(data => data);
-    //             console.log('!!!!!!!!!!!!!!!!!!!!!!')
-    //             if(matchedBlock)
-    //             {
-    //                 //if we have a match, do the following:
-    //                 //1) add the matched block index to our tracking buffer
-    //                 //2) check to see if there's a current patch. If so, add it to the patch document.
-    //                 //3) jump forward blockSize bytes and continue
-    //                 matchedBlocksUint32[matchCount] = matchedBlock;
-    //                 matchCount++;
-    //                 //check to see if we need more memory for the matched blocks
-    //                 if(matchCount >= matchedBlocksUint32.length)
-    //                 {
-    //                     matchedBlocks = appendBuffer(matchedBlocks, new ArrayBuffer(1000));
-    //                     matchedBlocksUint32 = new Uint32Array(matchedBlocks);
-    //                 }
-    //                 if(currentPatchSize > 0)
-    //                 {
-    //                     //create the patch and append it to the patches buffer
-    //                     patch = new ArrayBuffer(4 + 4); //4 for last match index, 4 for patch size
-    //                     var patchUint32 = new Uint32Array(patch,0,2);
-    //                     patchUint32[0] = lastMatchIndex;
-    //                     patchUint32[1] = currentPatchSize;
-    //                     patch = appendBuffer(patch,currentPatch.slice(0,currentPatchSize));
-    //                     patches = appendBuffer(patches, patch);
-    //                     currentPatch = new ArrayBuffer(1000);
-    //                     currentPatchUint8 = new Uint8Array(currentPatch);
-    //                     currentPatchSize = 0;
-    //                     numPatches++;
-    //                 }
-    //                 lastMatchIndex = matchedBlock;
-    //                 i+=blockSize;
-    //                 if(i >= dataUint8.length -1 ) break;
-    //                 adlerInfo=null;
-    //                 continue;
-    //             }
-    //             else
-    //             {
-    //                 //while we don't have a block match, append bytes to the current patch
-    //                 currentPatchUint8[currentPatchSize] = dataUint8[i];
-    //                 currentPatchSize++;
-    //                 content_traffic++;
-    //                 if(currentPatchSize >= currentPatch.byteLength)
-    //                 {
-    //                     //allocate another 1000 bytes
-    //                     currentPatch = appendBuffer(currentPatch, new ArrayBuffer(1000));
-    //                     currentPatchUint8 = new Uint8Array(currentPatch);
-    //                 }
-    //             }
-    //             if((i) >= dataUint8.length -1) break;
-    //             i++;
-    //         } //end for each byte in the data
-    //         if(currentPatchSize > 0)
-    //         {
-    //             //create the patch and append it to the patches buffer
-    //             patch = new ArrayBuffer(4 + 4); //4 for last match index, 4 for patch size
-    //             var patchUint32 = new Uint32Array(patch,0,2);
-    //             patchUint32[0] = lastMatchIndex;
-    //             patchUint32[1] = currentPatchSize;
-    //             patch = appendBuffer(patch,currentPatch.slice(0,currentPatchSize));
-    //             patches = appendBuffer(patches, patch);
-    //             numPatches++;
-    //         }
-    //         console.log('content traffic is',content_traffic);
-    //
-    //         var patchDocumentView32 = new Uint32Array(patchDocument);
-    //         patchDocumentView32[0] = blockSize;
-    //         patchDocumentView32[1] = numPatches;
-    //         patchDocumentView32[2] = matchCount;
-    //         console.log('match count',matchCount);
-    //         patchDocument = appendBuffer(patchDocument, matchedBlocks.slice(0,matchCount * 4));
-    //         patchDocument = appendBuffer(patchDocument, patches);
-    //
-    //         var patchDocumentView32 = new Uint32Array(patchDocument,0,matchCount + 3);
-    //         var patchDocumentView8 = new Uint8Array(patchDocument);
-    //
-    //         // return patchDocument;
-    //         resolve(patchDocument);
-    //     })
-    // }
     async function createPatchDocument(checksumDocument, data) {
         var content_traffic = 0;
         function appendBuffer(buffer1, buffer2) {
@@ -843,6 +637,7 @@ var BSync = new function () {
 
             var matchedBlock = await checkMatch(adlerInfo, hashTable, dataUint8.slice(i, i + chunkSize));
             if (matchedBlock) {
+                console.log('match')
                 //if we have a match, do the following:
                 //1) add the matched block index to our tracking buffer
                 //2) check to see if there's a current patch. If so, add it to the patch document.
