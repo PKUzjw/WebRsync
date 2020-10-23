@@ -40,330 +40,11 @@ if (!md5) {
 }
 var BSync = new function () {
     /******* Privates *********/
-    /**
-     * Native js md5 implementation. Written by by Luigi Galli - LG@4e71.org - http://faultylabs.com
-     * Modified by Clay Gulick - clay@ratiosoftware.com - http://ratiosoftware.com
-     */
-    // var md5 = function (data) {
-    //     var time_0 = performance.now()
-    //     var result
-    //     md5WASM(data)
-    //         .then(hash => result = hash)
-    //         .catch(err => console.log(err))
-    //     var time_1 = performance.now()
-    //     console.log('wasm-md5 time: ',  time_1-time_0)
-    //     console.log('wasm md5 result: ', result)
-    //     return result
-    //     }
+
     var md5 = async function (data) {
-        // function md5(data) {
-        var time_0 = performance.now()
-        var result = []
         return await md5WASM(data)
-            // .then(hash => console.log("return md5:", hash))
-            // .then(hash => {console.log(hash);return hash})
             .then(hash => { return hash })
             .catch(err => console.log(err))
-        // var time_1 = performance.now()
-        // console.log('wasm-md5 time: ',  time_1-time_0)
-        // if(result){
-        //     console.log('wasm md5 result: ', result)
-        //     return [result[0], result[1], result[2], result[3]]
-        // }
-        // console.log('@@@@@@@@@@@@@@')
-        //     // convert number to (unsigned) 32 bit hex, zero filled string
-        //     function to_zerofilled_hex(n) {
-        //         var t1 = (n >>> 0).toString(16)
-        //         return "00000000".substr(0, 8 - t1.length) + t1
-        //     }
-        //
-        //     // convert array of chars to array of bytes
-        //     function chars_to_bytes(ac) {
-        //         var retval = []
-        //         for (var i = 0; i < ac.length; i++) {
-        //             retval = retval.concat(str_to_bytes(ac[i]))
-        //         }
-        //         return retval
-        //     }
-        //
-        //
-        //     // convert a 64 bit unsigned number to array of bytes. Little endian
-        //     function int64_to_bytes(num) {
-        //         var retval = []
-        //         for (var i = 0; i < 8; i++) {
-        //             retval.push(num & 0xFF)
-        //             num = num >>> 8
-        //         }
-        //         return retval
-        //     }
-        //
-        //     //  32 bit left-rotation
-        //     function rol(num, places) {
-        //         return ((num << places) & 0xFFFFFFFF) | (num >>> (32 - places))
-        //     }
-        //
-        //     // The 4 MD5 functions
-        //     function fF(b, c, d) {
-        //         return (b & c) | (~b & d)
-        //     }
-        //
-        //     function fG(b, c, d) {
-        //         return (d & b) | (~d & c)
-        //     }
-        //
-        //     function fH(b, c, d) {
-        //         return b ^ c ^ d
-        //     }
-        //
-        //     function fI(b, c, d) {
-        //         return c ^ (b | ~d)
-        //     }
-        //
-        //     // pick 4 bytes at specified offset. Little-endian is assumed
-        //     function bytes_to_int32(arr, off) {
-        //         return (arr[off + 3] << 24) | (arr[off + 2] << 16) | (arr[off + 1] << 8) | (arr[off])
-        //     }
-        //
-        //     /*
-        //      Conver string to array of bytes in UTF-8 encoding
-        //      See:
-        //      http://www.dangrossman.info/2007/05/25/handling-utf-8-in-javascript-php-and-non-utf8-databases/
-        //      http://stackoverflow.com/questions/1240408/reading-bytes-from-a-javascript-string
-        //      How about a String.getBytes(<ENCODING>) for Javascript!? Isn't it time to add it?
-        //      */
-        //     function str_to_bytes(str) {
-        //         var retval = [ ]
-        //         for (var i = 0; i < str.length; i++)
-        //             if (str.charCodeAt(i) <= 0x7F) {
-        //                 retval.push(str.charCodeAt(i))
-        //             } else {
-        //                 var tmp = encodeURIComponent(str.charAt(i)).substr(1).split('%')
-        //                 for (var j = 0; j < tmp.length; j++) {
-        //                     retval.push(parseInt(tmp[j], 0x10))
-        //                 }
-        //             }
-        //         return retval
-        //     }
-        //
-        //
-        //     // convert the 4 32-bit buffers to a 128 bit hex string. (Little-endian is assumed)
-        //     function int128le_to_hex(a, b, c, d) {
-        //         var ra = ""
-        //         var t = 0
-        //         var ta = 0
-        //         for (var i = 3; i >= 0; i--) {
-        //             ta = arguments[i]
-        //             t = (ta & 0xFF)
-        //             ta = ta >>> 8
-        //             t = t << 8
-        //             t = t | (ta & 0xFF)
-        //             ta = ta >>> 8
-        //             t = t << 8
-        //             t = t | (ta & 0xFF)
-        //             ta = ta >>> 8
-        //             t = t << 8
-        //             t = t | ta
-        //             ra = ra + to_zerofilled_hex(t)
-        //         }
-        //         return ra
-        //     }
-        //
-        //     // conversion from typed byte array to plain javascript array
-        //     function typed_to_plain(tarr) {
-        //         var retval = new Array(tarr.length)
-        //         for (var i = 0; i < tarr.length; i++) {
-        //             retval[i] = tarr[i]
-        //         }
-        //         return retval
-        //     }
-        //
-        //     // check input data type and perform conversions if needed
-        //     var databytes = null
-        //     // String
-        //     var type_mismatch = null
-        //     if (typeof data == 'string') {
-        //         // convert string to array bytes
-        //         databytes = str_to_bytes(data)
-        //     } else if (data.constructor == Array) {
-        //         if (data.length === 0) {
-        //             // if it's empty, just assume array of bytes
-        //             databytes = data
-        //         } else if (typeof data[0] == 'string') {
-        //             databytes = chars_to_bytes(data)
-        //         } else if (typeof data[0] == 'number') {
-        //             databytes = data
-        //         } else {
-        //             type_mismatch = typeof data[0]
-        //         }
-        //     } else if (typeof ArrayBuffer != 'undefined') {
-        //         if (data instanceof ArrayBuffer) {
-        //             databytes = typed_to_plain(new Uint8Array(data))
-        //         } else if ((data instanceof Uint8Array) || (data instanceof Int8Array)) {
-        //             databytes = typed_to_plain(data)
-        //         } else if ((data instanceof Uint32Array) || (data instanceof Int32Array) ||
-        //             (data instanceof Uint16Array) || (data instanceof Int16Array) ||
-        //             (data instanceof Float32Array) || (data instanceof Float64Array)
-        //         ) {
-        //             databytes = typed_to_plain(new Uint8Array(data.buffer))
-        //         } else {
-        //             type_mismatch = typeof data
-        //         }
-        //     } else {
-        //         type_mismatch = typeof data
-        //     }
-        //
-        //     if (type_mismatch) {
-        //         alert('MD5 type mismatch, cannot process ' + type_mismatch)
-        //     }
-        //
-        //     function _add(n1, n2) {
-        //         return 0x0FFFFFFFF & (n1 + n2)
-        //     }
-        //
-        //
-        //     return do_digest(databytes)
-        //
-        //     function do_digest(databytes) {
-        //
-        //         // function update partial state for each run
-        //         function updateRun(nf, sin32, dw32, b32) {
-        //             var temp = d
-        //             d = c
-        //             c = b
-        //             //b = b + rol(a + (nf + (sin32 + dw32)), b32)
-        //             b = 0x0FFFFFFFF & (b +
-        //                 rol(
-        //                     0x0FFFFFFFF & (a +
-        //                         (0x0FFFFFFFF & (nf + (0x0FFFFFFFF & (sin32 + dw32))))
-        //                     ), b32
-        //                 )
-        //             )
-        //             a = temp
-        //         }
-        //
-        //         // save original length
-        //         var org_len = databytes.length
-        //
-        //         // first append the "1" + 7x "0"
-        //         databytes.push(0x80)
-        //
-        //         // determine required amount of padding
-        //         var tail = databytes.length % 64
-        //         // no room for msg length?
-        //         if (tail > 56) {
-        //             // pad to next 512 bit block
-        //             for (var i = 0; i < (64 - tail); i++) {
-        //                 databytes.push(0x0)
-        //             }
-        //             tail = databytes.length % 64
-        //         }
-        //         for (i = 0; i < (56 - tail); i++) {
-        //             databytes.push(0x0)
-        //         }
-        //         // message length in bits mod 512 should now be 448
-        //         // append 64 bit, little-endian original msg length (in *bits*!)
-        //         databytes = databytes.concat(int64_to_bytes(org_len * 8))
-        //
-        //         // initialize 4x32 bit state
-        //         var h0 = 0x67452301
-        //         var h1 = 0xEFCDAB89
-        //         var h2 = 0x98BADCFE
-        //         var h3 = 0x10325476
-        //
-        //         // temp buffers
-        //         var a = 0, b = 0, c = 0, d = 0
-        //
-        //         // Digest message
-        //         for (i = 0; i < databytes.length / 64; i++) {
-        //             // initialize run
-        //             a = h0
-        //             b = h1
-        //             c = h2
-        //             d = h3
-        //
-        //             var ptr = i * 64
-        //
-        //             // do 64 runs
-        //             updateRun(fF(b, c, d), 0xd76aa478, bytes_to_int32(databytes, ptr), 7)
-        //             updateRun(fF(b, c, d), 0xe8c7b756, bytes_to_int32(databytes, ptr + 4), 12)
-        //             updateRun(fF(b, c, d), 0x242070db, bytes_to_int32(databytes, ptr + 8), 17)
-        //             updateRun(fF(b, c, d), 0xc1bdceee, bytes_to_int32(databytes, ptr + 12), 22)
-        //             updateRun(fF(b, c, d), 0xf57c0faf, bytes_to_int32(databytes, ptr + 16), 7)
-        //             updateRun(fF(b, c, d), 0x4787c62a, bytes_to_int32(databytes, ptr + 20), 12)
-        //             updateRun(fF(b, c, d), 0xa8304613, bytes_to_int32(databytes, ptr + 24), 17)
-        //             updateRun(fF(b, c, d), 0xfd469501, bytes_to_int32(databytes, ptr + 28), 22)
-        //             updateRun(fF(b, c, d), 0x698098d8, bytes_to_int32(databytes, ptr + 32), 7)
-        //             updateRun(fF(b, c, d), 0x8b44f7af, bytes_to_int32(databytes, ptr + 36), 12)
-        //             updateRun(fF(b, c, d), 0xffff5bb1, bytes_to_int32(databytes, ptr + 40), 17)
-        //             updateRun(fF(b, c, d), 0x895cd7be, bytes_to_int32(databytes, ptr + 44), 22)
-        //             updateRun(fF(b, c, d), 0x6b901122, bytes_to_int32(databytes, ptr + 48), 7)
-        //             updateRun(fF(b, c, d), 0xfd987193, bytes_to_int32(databytes, ptr + 52), 12)
-        //             updateRun(fF(b, c, d), 0xa679438e, bytes_to_int32(databytes, ptr + 56), 17)
-        //             updateRun(fF(b, c, d), 0x49b40821, bytes_to_int32(databytes, ptr + 60), 22)
-        //             updateRun(fG(b, c, d), 0xf61e2562, bytes_to_int32(databytes, ptr + 4), 5)
-        //             updateRun(fG(b, c, d), 0xc040b340, bytes_to_int32(databytes, ptr + 24), 9)
-        //             updateRun(fG(b, c, d), 0x265e5a51, bytes_to_int32(databytes, ptr + 44), 14)
-        //             updateRun(fG(b, c, d), 0xe9b6c7aa, bytes_to_int32(databytes, ptr), 20)
-        //             updateRun(fG(b, c, d), 0xd62f105d, bytes_to_int32(databytes, ptr + 20), 5)
-        //             updateRun(fG(b, c, d), 0x2441453, bytes_to_int32(databytes, ptr + 40), 9)
-        //             updateRun(fG(b, c, d), 0xd8a1e681, bytes_to_int32(databytes, ptr + 60), 14)
-        //             updateRun(fG(b, c, d), 0xe7d3fbc8, bytes_to_int32(databytes, ptr + 16), 20)
-        //             updateRun(fG(b, c, d), 0x21e1cde6, bytes_to_int32(databytes, ptr + 36), 5)
-        //             updateRun(fG(b, c, d), 0xc33707d6, bytes_to_int32(databytes, ptr + 56), 9)
-        //             updateRun(fG(b, c, d), 0xf4d50d87, bytes_to_int32(databytes, ptr + 12), 14)
-        //             updateRun(fG(b, c, d), 0x455a14ed, bytes_to_int32(databytes, ptr + 32), 20)
-        //             updateRun(fG(b, c, d), 0xa9e3e905, bytes_to_int32(databytes, ptr + 52), 5)
-        //             updateRun(fG(b, c, d), 0xfcefa3f8, bytes_to_int32(databytes, ptr + 8), 9)
-        //             updateRun(fG(b, c, d), 0x676f02d9, bytes_to_int32(databytes, ptr + 28), 14)
-        //             updateRun(fG(b, c, d), 0x8d2a4c8a, bytes_to_int32(databytes, ptr + 48), 20)
-        //             updateRun(fH(b, c, d), 0xfffa3942, bytes_to_int32(databytes, ptr + 20), 4)
-        //             updateRun(fH(b, c, d), 0x8771f681, bytes_to_int32(databytes, ptr + 32), 11)
-        //             updateRun(fH(b, c, d), 0x6d9d6122, bytes_to_int32(databytes, ptr + 44), 16)
-        //             updateRun(fH(b, c, d), 0xfde5380c, bytes_to_int32(databytes, ptr + 56), 23)
-        //             updateRun(fH(b, c, d), 0xa4beea44, bytes_to_int32(databytes, ptr + 4), 4)
-        //             updateRun(fH(b, c, d), 0x4bdecfa9, bytes_to_int32(databytes, ptr + 16), 11)
-        //             updateRun(fH(b, c, d), 0xf6bb4b60, bytes_to_int32(databytes, ptr + 28), 16)
-        //             updateRun(fH(b, c, d), 0xbebfbc70, bytes_to_int32(databytes, ptr + 40), 23)
-        //             updateRun(fH(b, c, d), 0x289b7ec6, bytes_to_int32(databytes, ptr + 52), 4)
-        //             updateRun(fH(b, c, d), 0xeaa127fa, bytes_to_int32(databytes, ptr), 11)
-        //             updateRun(fH(b, c, d), 0xd4ef3085, bytes_to_int32(databytes, ptr + 12), 16)
-        //             updateRun(fH(b, c, d), 0x4881d05, bytes_to_int32(databytes, ptr + 24), 23)
-        //             updateRun(fH(b, c, d), 0xd9d4d039, bytes_to_int32(databytes, ptr + 36), 4)
-        //             updateRun(fH(b, c, d), 0xe6db99e5, bytes_to_int32(databytes, ptr + 48), 11)
-        //             updateRun(fH(b, c, d), 0x1fa27cf8, bytes_to_int32(databytes, ptr + 60), 16)
-        //             updateRun(fH(b, c, d), 0xc4ac5665, bytes_to_int32(databytes, ptr + 8), 23)
-        //             updateRun(fI(b, c, d), 0xf4292244, bytes_to_int32(databytes, ptr), 6)
-        //             updateRun(fI(b, c, d), 0x432aff97, bytes_to_int32(databytes, ptr + 28), 10)
-        //             updateRun(fI(b, c, d), 0xab9423a7, bytes_to_int32(databytes, ptr + 56), 15)
-        //             updateRun(fI(b, c, d), 0xfc93a039, bytes_to_int32(databytes, ptr + 20), 21)
-        //             updateRun(fI(b, c, d), 0xffeff47d, bytes_to_int32(databytes, ptr + 40), 15)
-        //             updateRun(fI(b, c, d), 0x85845dd1, bytes_to_int32(databytes, ptr + 4), 21)
-        //             updateRun(fI(b, c, d), 0x6fa87e4f, bytes_to_int32(databytes, ptr + 32), 6)
-        //             updateRun(fI(b, c, d), 0xfe2ce6e0, bytes_to_int32(databytes, ptr + 60), 10)
-        //             updateRun(fI(b, c, d), 0xa3014314, bytes_to_int32(databytes, ptr + 24), 15)
-        //             updateRun(fI(b, c, d), 0x4e0811a1, bytes_to_int32(databytes, ptr + 52), 21)
-        //             updateRun(fI(b, c, d), 0xf7537e82, bytes_to_int32(databytes, ptr + 16), 6)
-        //             updateRun(fI(b, c, d), 0xbd3af235, bytes_to_int32(databytes, ptr + 44), 10)
-        //             updateRun(fI(b, c, d), 0x2ad7d2bb, bytes_to_int32(databytes, ptr + 8), 15)
-        //             updateRun(fI(b, c, d), 0xeb86d391, bytes_to_int32(databytes, ptr + 36), 21)
-        //
-        //             // update buffers
-        //             h0 = _add(h0, a)
-        //             h1 = _add(h1, b)
-        //             h2 = _add(h2, c)
-        //             h3 = _add(h3, d)
-        //         }
-        //         // Done! Convert buffers to 128 bit (LE)
-        //         //return int128le_to_hex(h3, h2, h1, h0).toUpperCase()
-        //         console.log('result: ', result)
-        //         console.log('h0: ', h0)
-        //         console.log('h1: ', h1)
-        //         console.log('h2: ', h2)
-        //         console.log('h3: ', h3)
-        //         var time_2 = performance.now()
-        //         console.log('md5 time: ',  time_2-time_1)
-        //         return [h0,h1,h2,h3];
-        // }
     }
     /* ---- end md5 section ---- */
 
@@ -498,18 +179,12 @@ var BSync = new function () {
             if ((start + blockSize) > data.byteLength)
                 chunkLength = data.byteLength - start;
 
-            // var md5sum = md5(new Uint8Array(data, start, chunkLength));
-            // console.log('******time1: ', new Date().toLocaleTimeString('cn', { hour12: false }))
             md5sum = await md5(dataView.slice(start, start + chunkLength));
-            // console.log('******time3: ', new Date().toLocaleTimeString('cn', { hour12: false }))
-            // console.log('create checksumdoc md5: ', md5sum)
             for (var j = 0; j < 4; j++) bufferView[offset++] = md5sum[j];
 
         }
         var test1 = performance.now();
         console.log("checksum time: " + (test1 - startTime));
-        // console.log('******time4: ', new Date().toLocaleTimeString('cn', { hour12: false }))
-        // console.log('doc: ', doc)
         return doc;
 
     }
@@ -568,177 +243,6 @@ var BSync = new function () {
      *   4 bytes - patch size
      *   n bytes - new data
      */
-    // function createPatchDocument(checksumDocument, data) {
-    //     return new Promise((resolve, reject)=>{
-    //         var content_traffic = 0;
-    //         function appendBuffer( buffer1, buffer2 ) {
-    //             var tmp = new Uint8Array( buffer1.byteLength + buffer2.byteLength );
-    //             tmp.set( new Uint8Array( buffer1 ), 0 );
-    //             tmp.set( new Uint8Array( buffer2 ), buffer1.byteLength );
-    //             return tmp.buffer;
-    //         }
-    //
-    //         /**
-    //          * First, check to see if there's a match on the 16 bit hash
-    //          * Then, look through all the entries in the hashtable row for an adler 32 match.
-    //          * Finally, do a strong md5 comparison
-    //          */
-    //         async function checkMatch(adlerInfo, hashTable, block)
-    //         {
-    //             var hash = hash16(adlerInfo.checksum);
-    //             if(!(hashTable[hash])) return false;
-    //             var row = hashTable[hash];
-    //             var i=0;
-    //             var matchedIndex=0;
-    //
-    //             for(i=0; i<row.length; i++)
-    //             {
-    //                 //compare adler32sum
-    //                 if((row[i][1] & 0xffffffff) != adlerInfo.checksum) continue;
-    //                 //do strong comparison
-    //                 md5sum1 = await md5(block);
-    //                 console.log('create patch md5: ', md5sum1)
-    //                 md5sum1 = new Uint32Array([md5sum1[0],md5sum1[1],md5sum1[2],md5sum1[3]]); //convert to unsigned 32
-    //                 md5sum2 = row[i][2];
-    //                 // md5sum2 = new Uint32Array([md5sum2[0], md5sum2[1], md5sum2[2], md5sum2[3]])
-    //                 console.log('md5sum1: ', md5sum1)
-    //                 console.log('md5sum2: ', md5sum2)
-    //
-    //                 if(
-    //                     md5sum1[0] === md5sum2[0] &&
-    //                     md5sum1[1] === md5sum2[1] &&
-    //                     md5sum1[2] === md5sum2[2] &&
-    //                     md5sum1[3] === md5sum2[3]
-    //                 )
-    //                     return row[i][0]; //match found, return the matched block index
-    //
-    //             }
-    //
-    //             return false;
-    //
-    //         }
-    //
-    //         var checksumDocumentView = new Uint32Array(checksumDocument);
-    //         var blockSize = checksumDocumentView[0];
-    //         var numBlocks = checksumDocumentView[1];
-    //         var numPatches = 0;
-    //
-    //         var patchDocument = new ArrayBuffer(12);
-    //         var patch;
-    //         var patches = new ArrayBuffer(0);
-    //         var i=0;
-    //         console.log('client receive checksumdoc: ', checksumDocument)
-    //         var hashTable = parseChecksumDocument(checksumDocument);
-    //         console.log('client parse checksum doc hash table: ', hashTable)
-    //         var endOffset = data.byteLength - blockSize;
-    //         var adlerInfo = null;
-    //         var lastMatchIndex = 0;
-    //         var currentPatch = new ArrayBuffer(1000);
-    //         var currentPatchUint8 = new Uint8Array(currentPatch);
-    //         var currentPatchSize = 0;
-    //         var dataUint8 = new Uint8Array(data);
-    //         var matchedBlocks = new ArrayBuffer(1000);
-    //         var matchedBlocksUint32 = new Uint32Array(matchedBlocks);
-    //         var matchCount = 0;
-    //
-    //
-    //         for(;;)
-    //         {
-    //             var chunkSize = 0;
-    //             //determine the size of the next data chuck to evaluate. Default to blockSize, but clamp to end of data
-    //             if((i + blockSize) > data.byteLength)
-    //             {
-    //                 chunkSize = data.byteLength - i;
-    //                 adlerInfo=null; //need to reset this because the rolling checksum doesn't work correctly on a final non-aligned block
-    //             }
-    //             else
-    //                 chunkSize = blockSize;
-    //
-    //             if(adlerInfo)
-    //                 adlerInfo = rollingChecksum(adlerInfo, i, i + chunkSize - 1, dataUint8);
-    //             else
-    //                 adlerInfo = adler32(i, i + chunkSize - 1, dataUint8);
-    //
-    //             var matchedBlock = await checkMatch(adlerInfo, hashTable,dataUint8.slice(i,i+chunkSize)).then(data => data);
-    //             console.log('!!!!!!!!!!!!!!!!!!!!!!')
-    //             if(matchedBlock)
-    //             {
-    //                 //if we have a match, do the following:
-    //                 //1) add the matched block index to our tracking buffer
-    //                 //2) check to see if there's a current patch. If so, add it to the patch document.
-    //                 //3) jump forward blockSize bytes and continue
-    //                 matchedBlocksUint32[matchCount] = matchedBlock;
-    //                 matchCount++;
-    //                 //check to see if we need more memory for the matched blocks
-    //                 if(matchCount >= matchedBlocksUint32.length)
-    //                 {
-    //                     matchedBlocks = appendBuffer(matchedBlocks, new ArrayBuffer(1000));
-    //                     matchedBlocksUint32 = new Uint32Array(matchedBlocks);
-    //                 }
-    //                 if(currentPatchSize > 0)
-    //                 {
-    //                     //create the patch and append it to the patches buffer
-    //                     patch = new ArrayBuffer(4 + 4); //4 for last match index, 4 for patch size
-    //                     var patchUint32 = new Uint32Array(patch,0,2);
-    //                     patchUint32[0] = lastMatchIndex;
-    //                     patchUint32[1] = currentPatchSize;
-    //                     patch = appendBuffer(patch,currentPatch.slice(0,currentPatchSize));
-    //                     patches = appendBuffer(patches, patch);
-    //                     currentPatch = new ArrayBuffer(1000);
-    //                     currentPatchUint8 = new Uint8Array(currentPatch);
-    //                     currentPatchSize = 0;
-    //                     numPatches++;
-    //                 }
-    //                 lastMatchIndex = matchedBlock;
-    //                 i+=blockSize;
-    //                 if(i >= dataUint8.length -1 ) break;
-    //                 adlerInfo=null;
-    //                 continue;
-    //             }
-    //             else
-    //             {
-    //                 //while we don't have a block match, append bytes to the current patch
-    //                 currentPatchUint8[currentPatchSize] = dataUint8[i];
-    //                 currentPatchSize++;
-    //                 content_traffic++;
-    //                 if(currentPatchSize >= currentPatch.byteLength)
-    //                 {
-    //                     //allocate another 1000 bytes
-    //                     currentPatch = appendBuffer(currentPatch, new ArrayBuffer(1000));
-    //                     currentPatchUint8 = new Uint8Array(currentPatch);
-    //                 }
-    //             }
-    //             if((i) >= dataUint8.length -1) break;
-    //             i++;
-    //         } //end for each byte in the data
-    //         if(currentPatchSize > 0)
-    //         {
-    //             //create the patch and append it to the patches buffer
-    //             patch = new ArrayBuffer(4 + 4); //4 for last match index, 4 for patch size
-    //             var patchUint32 = new Uint32Array(patch,0,2);
-    //             patchUint32[0] = lastMatchIndex;
-    //             patchUint32[1] = currentPatchSize;
-    //             patch = appendBuffer(patch,currentPatch.slice(0,currentPatchSize));
-    //             patches = appendBuffer(patches, patch);
-    //             numPatches++;
-    //         }
-    //         console.log('content traffic is',content_traffic);
-    //
-    //         var patchDocumentView32 = new Uint32Array(patchDocument);
-    //         patchDocumentView32[0] = blockSize;
-    //         patchDocumentView32[1] = numPatches;
-    //         patchDocumentView32[2] = matchCount;
-    //         console.log('match count',matchCount);
-    //         patchDocument = appendBuffer(patchDocument, matchedBlocks.slice(0,matchCount * 4));
-    //         patchDocument = appendBuffer(patchDocument, patches);
-    //
-    //         var patchDocumentView32 = new Uint32Array(patchDocument,0,matchCount + 3);
-    //         var patchDocumentView8 = new Uint8Array(patchDocument);
-    //
-    //         // return patchDocument;
-    //         resolve(patchDocument);
-    //     })
-    // }
     async function createPatchDocument(checksumDocument, data) {
         var content_traffic = 0;
         function appendBuffer(buffer1, buffer2) {
@@ -754,8 +258,8 @@ var BSync = new function () {
          * Finally, do a strong md5 comparison
          */
         async function checkMatch(adlerInfo, hashTable, block) {
-            var hash = hash16(adlerInfo.checksum);
-            if (!(hashTable[hash])) return false;
+            // var hash = hash16(adlerInfo.checksum);
+            // if (!(hashTable[hash])) return false;
             var row = hashTable[hash];
             var i = 0;
             var matchedIndex = 0;
@@ -833,6 +337,7 @@ var BSync = new function () {
             else
                 chunkSize = blockSize;
 
+            s = performance.now()
             if (adlerInfo) {
                 cnt1++
                 adlerInfo = rollingChecksum(adlerInfo, i, i + chunkSize - 1, dataUint8);
@@ -841,8 +346,15 @@ var BSync = new function () {
                 adlerInfo = adler32(i, i + chunkSize - 1, dataUint8);
             }
 
-            var matchedBlock = await checkMatch(adlerInfo, hashTable, dataUint8.slice(i, i + chunkSize));
+            var hash = hash16(adlerInfo.checksum);
+            var matchedBlock = false
+            if (!(hashTable[hash])) {
+                matchedBlock = false
+            } else {
+                matchedBlock = await checkMatch(adlerInfo, hashTable, dataUint8.slice(i, i + chunkSize));
+            }
             if (matchedBlock) {
+                // console.log('match')
                 //if we have a match, do the following:
                 //1) add the matched block index to our tracking buffer
                 //2) check to see if there's a current patch. If so, add it to the patch document.
@@ -886,9 +398,12 @@ var BSync = new function () {
             }
             if ((i) >= dataUint8.length - 1) break;
             i++;
+            e = performance.now()
+            total += e - s
         } //end for each byte in the data
         console.log("CNT1: ", cnt1)
         console.log("CNT2: ", cnt2)
+        console.log('TOTOL: ', total)
         if (currentPatchSize > 0) {
             //create the patch and append it to the patches buffer
             patch = new ArrayBuffer(4 + 4); //4 for last match index, 4 for patch size
