@@ -719,13 +719,8 @@ var BSync = new function () {
      * Due to the inability to modify the size of ArrayBuffers once they have been allocated, this function
      * will return a new ArrayBuffer with the update file data. Note that this will consume a good bit of extra memory.
      */
-    function applyPatch(patchDocument, data) {
-        function appendBlock(buffer, blockUint8) {
-            var tmp = new Uint8Array(buffer.byteLength + blockUint8.length);
-            tmp.set(new Uint8Array(buffer), 0);
-            tmp.set(blockUint8, buffer.byteLength);
-            return tmp.buffer;
-        }
+    function applyPatch(patchDocument, data, new_length) {
+        var ret = new Uint8Array(new_length)
 
         var patchDocumentView32 = new Uint32Array(patchDocument, 0, 3);
         var blockSize = patchDocumentView32[0];
@@ -757,10 +752,11 @@ var BSync = new function () {
         var patchView8;
         var matchIndex = 0; //the index into the matching blocks array
         var blockIndex = 0; //the index of the block in the matching blocks array
-        var ret = new ArrayBuffer(0);
+        // var ret = new ArrayBuffer(0);
         var patchDocumentView8 = new Uint8Array(patchDocument);
         var chunkSize = 0;
         var dataView = new Uint8Array(data);
+        var dataoffset = 0;
         for (i = 0; i < patchCount; i++) {
             lastMatchingBlockIndex = readInt32(patchDocumentView8, offset);
             patchSize = readInt32(patchDocumentView8, offset + 4);
@@ -773,10 +769,12 @@ var BSync = new function () {
                 if ((blockIndex * blockSize) > data.byteLength)
                     chunkSize = data.byteLength % blockSize;
                 else chunkSize = blockSize;
-                ret = appendBlock(ret, dataView.slice((blockIndex - 1) * blockSize, (blockIndex - 1) * blockSize + chunkSize));
+                ret.set(dataView.slice((blockIndex - 1) * blockSize, (blockIndex - 1) * blockSize + chunkSize), dataoffset);
+                dataoffset += chunkSize;
             }
 
-            ret = appendBlock(ret, patchView8);
+            ret.set(patchView8, dataoffset);
+            dataoffset += patchSize;
         }
 
         //we're done with all the patches, add the remaining blocks
@@ -785,10 +783,11 @@ var BSync = new function () {
             if ((blockIndex * blockSize) > data.byteLength)
                 chunkSize = data.byteLength % blockSize;
             else chunkSize = blockSize;
-            ret = appendBlock(ret, dataView.slice((blockIndex - 1) * blockSize, (blockIndex - 1) * blockSize + chunkSize));
+            ret.set(dataView.slice((blockIndex - 1) * blockSize, (blockIndex - 1) * blockSize + chunkSize), dataoffset);
+            dataoffset += chunkSize;
         }
 
-        return ret;
+        return ret.buffer
     }
 
     /******** Public API ***********/

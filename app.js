@@ -101,7 +101,6 @@ io.on('connection', function(socket)
                     data.byteLength = data.length;
                     console.log('start get checksumdoc 1...',data.length);
                     BSync.createChecksumDocument(req.blocksize,data).then((checksumdoc) => {
-                        console.log('server checksum doc: ', checksumdoc)
                         console.log('<< checksumdoc');
                         socket.emit('checksumdoc',{filename:req.filename,checksumdoc:checksumdoc});
                     });
@@ -109,7 +108,6 @@ io.on('connection', function(socket)
             } else {
                 console.log('start get checksumdoc 2...');
                 checksumdoc = BSync.createChecksumDocument(req.blocksize,new ArrayBuffer(0));
-                console.log('server checksum doc: ', checksumdoc)
                 console.log('<< checksumdoc');
                 socket.emit('checksumdoc',{filename:req.filename,checksumdoc:checksumdoc});
             }
@@ -118,17 +116,17 @@ io.on('connection', function(socket)
 
     socket.on('patchdoc',function(req){
         patchdoc = req.patchdoc;
-        filepath = basePath + req.filename;
-
+        filepath = basePath + req.filename
         patchdocView = new Uint8Array(patchdoc);
         patchdoc = patchdocView.buffer
+        dataLength = req.datalength
         fs.stat(filePath, function (err,stat) {
 
             if (err == null) {
 
                 getFileData(basePath + req.filename,function(data){
                     console.log('original data is',data.length);
-                    newfiledata = BSync.applyPatch(patchdoc,data);
+                    newfiledata = BSync.applyPatch(patchdoc,data, dataLength);
                     console.log('write length',newfiledata.byteLength)
 
                     fs.writeFile(filePath,arrayBufferToBuffer(newfiledata),function(err){
